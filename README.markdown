@@ -1,8 +1,7 @@
 httputil Package
 ================
 
-package httputil
-import "github.com/crazy2be/httputil"
+    import "github.com/crazy2be/httputil"
 
 What It Is
 ----------
