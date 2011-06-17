@@ -4,8 +4,40 @@ package httputil
 import (
 	"strings"
 	"http"
+	"fmt"
 	"os"
+	"io"
 )
+
+type HttpResponseWriter struct {
+	conn io.Writer
+	headers http.Header
+	wroteHeaders bool
+}
+
+func NewHttpResponseWriter(conn io.Writer) (*HttpResponseWriter) {
+	return &HttpResponseWriter{conn, make(map[string][]string), false}
+}
+
+func (h *HttpResponseWriter) Header() http.Header {
+	return h.headers
+}
+
+// BUG: Assumes http 1.1 and that status is always "OK" (although not necessarily 200).
+func (h *HttpResponseWriter) WriteHeader(code int) {
+	fmt.Fprintln(h.conn, "HTTP/1.1", code, "OK")
+	for name, value := range h.headers {
+		fmt.Fprintf(h.conn, "%s: %s\n", name, value)
+	}
+	fmt.Fprintln(h.conn)
+}
+
+func (h *HttpResponseWriter) Write(buf []byte) (int, os.Error) {
+	if !h.wroteHeaders {
+		h.WriteHeader(200)
+	}
+	return h.conn.Write(buf)
+}
 
 // Searches for the cookie given by key in the request r, returning the value of the first found match. Can be inefficient if there are many cookies, as it does no sorting. Returns nil if no cookie was found. Case-insensitive.
 func FindCookie(r *http.Request, key string) *http.Cookie {
