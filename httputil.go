@@ -10,12 +10,12 @@ import (
 )
 
 type HttpResponseWriter struct {
-	conn io.Writer
-	headers http.Header
+	conn         io.Writer
+	headers      http.Header
 	wroteHeaders bool
 }
 
-func NewHttpResponseWriter(conn io.Writer) (*HttpResponseWriter) {
+func NewHttpResponseWriter(conn io.Writer) *HttpResponseWriter {
 	return &HttpResponseWriter{conn, make(map[string][]string), false}
 }
 
@@ -41,7 +41,7 @@ func (h *HttpResponseWriter) Write(buf []byte) (int, os.Error) {
 
 // Searches for the cookie given by key in the request r, returning the value of the first found match. Can be inefficient if there are many cookies, as it does no sorting. Returns nil if no cookie was found. Case-insensitive.
 func FindCookie(r *http.Request, key string) *http.Cookie {
-	cookiearray := r.Cookie
+	cookiearray := r.Cookies()
 	for _, cookie := range cookiearray {
 		if strings.ToLower(cookie.Name) == strings.ToLower(key) {
 			return cookie
@@ -54,7 +54,7 @@ func FindCookie(r *http.Request, key string) *http.Cookie {
 func ServeFileOnly(w http.ResponseWriter, r *http.Request, name string) {
 	finfo, e := os.Stat(name)
 	if e != nil {
-		http.Error(w, "Unable to open file " + name, 404)
+		http.Error(w, "Unable to open file "+name, 404)
 		return
 	}
 	if finfo.IsDirectory() {
