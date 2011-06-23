@@ -15,12 +15,13 @@ type HttpResponseWriter struct {
 	conn         io.Writer
 	buf          *bytes.Buffer
 	headers      http.Header
+	noContent    bool
 	statusCode   int
 	wroteHeaders bool
 }
 
 func NewHttpResponseWriter(conn io.Writer) *HttpResponseWriter {
-	return &HttpResponseWriter{conn, nil, make(map[string][]string), 0, false}
+	return &HttpResponseWriter{conn, nil, make(map[string][]string), false, 0, false}
 }
 
 func (h *HttpResponseWriter) Header() http.Header {
@@ -33,13 +34,15 @@ func (h *HttpResponseWriter) WriteHeader(code int) {
 	log.Println(h.headers)
 	log.Println(h.headers.Get("Content-Length"))
 	if h.headers.Get("Content-Length") == "" {
-		//h.statusCode = code
-		if h.buf == nil {
-			h.buf = bytes.NewBuffer([]byte(""))
-		}
-		log.Println("No content-length")
-		return
+		h.headers.Set("Content-Length", "0")
+		h.noContent = true
 	}
+// 		//h.statusCode = code
+// 		if h.buf == nil {
+// 			h.buf = bytes.NewBuffer([]byte(""))
+// 		}
+// 		log.Println("No content-length")
+// 		return
 	log.Println("Writing headers")
 	for name, value := range h.headers {
 		valuestr := ""
@@ -57,10 +60,13 @@ func (h *HttpResponseWriter) Write(buf []byte) (int, os.Error) {
 	if !h.wroteHeaders {
 		h.WriteHeader(200)
 	}
-	if h.buf != nil {
-		log.Println("BUffer length:", len(buf))
-		return h.buf.Write(buf)
+	if h.noContent {
+		return 0, nil
 	}
+// 	if h.buf != nil {
+// 		log.Println("BUffer length:", len(buf))
+// 		return h.buf.Write(buf)
+// 	}
 	n, err := h.conn.Write(buf)
 	log.Println(n, err)
 	return n, err
