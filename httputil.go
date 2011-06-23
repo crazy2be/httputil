@@ -34,6 +34,7 @@ func (h *HttpResponseWriter) WriteHeader(code int) {
 		fmt.Fprintf(h.conn, "%s: %s\n", name, valuestr)
 	}
 	fmt.Fprintln(h.conn)
+	h.wroteHeaders = true
 }
 
 func (h *HttpResponseWriter) Write(buf []byte) (int, os.Error) {
