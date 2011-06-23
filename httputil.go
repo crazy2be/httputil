@@ -40,6 +40,7 @@ func (h *HttpResponseWriter) Write(buf []byte) (int, os.Error) {
 }
 
 // Searches for the cookie given by key in the request r, returning the value of the first found match. Can be inefficient if there are many cookies, as it does no sorting. Returns nil if no cookie was found. Case-insensitive.
+// DEPRECATED, use r.Cookie(name) instead.
 func FindCookie(r *http.Request, key string) *http.Cookie {
 	cookiearray := r.Cookies()
 	for _, cookie := range cookiearray {
