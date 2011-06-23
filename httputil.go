@@ -27,7 +27,11 @@ func (h *HttpResponseWriter) Header() http.Header {
 func (h *HttpResponseWriter) WriteHeader(code int) {
 	fmt.Fprintln(h.conn, "HTTP/1.1", code, "OK")
 	for name, value := range h.headers {
-		fmt.Fprintf(h.conn, "%s: %s\n", name, value)
+		valuestr = ""
+		for _, singlevalue := range value {
+			valuestr += singlevalue + "; "
+		}
+		fmt.Fprintf(h.conn, "%s: %s\n", name, valuestr)
 	}
 	fmt.Fprintln(h.conn)
 }

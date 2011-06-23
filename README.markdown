@@ -1,11 +1,24 @@
-httputil Package
-================
+HTTP Utility Package
+====================
+
+Using it
+--------
+
+Install:
+
+    goinstall github.com/crazy2be/httputil
+
+Import:
 
     import "github.com/crazy2be/httputil"
 
-What It Is
+Use:
+
+    httputil.ServeFileOnly(c, r)
+
+What It Provides
 ----------
-Basic http functionality that really aught to be in the http library, but isn't.
+HTTP functionality that really aught to be in the http package, but isn't for whatever reason. Designed to supplement the existing http package.
 
 Functions
 ---------
