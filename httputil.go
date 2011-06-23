@@ -3,20 +3,24 @@ package httputil
 
 import (
 	"strings"
+	"bytes"
 	"http"
 	"fmt"
+	"log"
 	"os"
 	"io"
 )
 
 type HttpResponseWriter struct {
 	conn         io.Writer
+	buf          *bytes.Buffer
 	headers      http.Header
+	statusCode   int
 	wroteHeaders bool
 }
 
 func NewHttpResponseWriter(conn io.Writer) *HttpResponseWriter {
-	return &HttpResponseWriter{conn, make(map[string][]string), false}
+	return &HttpResponseWriter{conn, nil, make(map[string][]string), 0, false}
 }
 
 func (h *HttpResponseWriter) Header() http.Header {
@@ -25,12 +29,24 @@ func (h *HttpResponseWriter) Header() http.Header {
 
 // BUG: Assumes http 1.1 and that status is always "OK" (although not necessarily 200).
 func (h *HttpResponseWriter) WriteHeader(code int) {
-	fmt.Fprintln(h.conn, "HTTP/1.1", code, "OK")
+	fmt.Fprintln(h.conn, "HTTP/1.1", code, http.StatusText(code))
+	log.Println(h.headers)
+	log.Println(h.headers.Get("Content-Length"))
+	if h.headers.Get("Content-Length") == "" {
+		//h.statusCode = code
+		if h.buf == nil {
+			h.buf = bytes.NewBuffer([]byte(""))
+		}
+		log.Println("No content-length")
+		return
+	}
+	log.Println("Writing headers")
 	for name, value := range h.headers {
 		valuestr := ""
 		for _, singlevalue := range value {
 			valuestr += singlevalue + "; "
 		}
+		valuestr = valuestr[:len(valuestr)-2]
 		fmt.Fprintf(h.conn, "%s: %s\n", name, valuestr)
 	}
 	fmt.Fprintln(h.conn)
@@ -41,7 +57,19 @@ func (h *HttpResponseWriter) Write(buf []byte) (int, os.Error) {
 	if !h.wroteHeaders {
 		h.WriteHeader(200)
 	}
-	return h.conn.Write(buf)
+	if h.buf != nil {
+		log.Println("BUffer length:", len(buf))
+		return h.buf.Write(buf)
+	}
+	n, err := h.conn.Write(buf)
+	log.Println(n, err)
+	return n, err
+}
+
+func (h *HttpResponseWriter) Flush() {
+	h.headers.Set("Content-Length", fmt.Sprintf("%d", h.buf.Len()))
+	h.WriteHeader(200)
+	h.conn.Write(h.buf.Bytes())
 }
 
 // Searches for the cookie given by key in the request r, returning the value of the first found match. Can be inefficient if there are many cookies, as it does no sorting. Returns nil if no cookie was found. Case-insensitive.
