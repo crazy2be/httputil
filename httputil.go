@@ -20,6 +20,7 @@ type HttpResponseWriter struct {
 	wroteHeaders bool
 }
 
+// Returns a new HttpResponseWriter, useful for calls to httputil.ServeFileOnly() where you only have a raw connection and no http.ResponseWriter. Note that this only works with files or other content where the length is known beforehand: if the content-length is not set explicitly, it defaults to zero, and no content is sent!
 func NewHttpResponseWriter(conn io.Writer) *HttpResponseWriter {
 	return &HttpResponseWriter{conn, nil, make(map[string][]string), false, 0, false}
 }
@@ -28,21 +29,13 @@ func (h *HttpResponseWriter) Header() http.Header {
 	return h.headers
 }
 
-// BUG: Assumes http 1.1 and that status is always "OK" (although not necessarily 200).
+// BUG: If content-length is not set explicitly, it is set to 0 and any calls to h.Write() do nothing. Supporting chunked encoding would be a pain...
 func (h *HttpResponseWriter) WriteHeader(code int) {
 	fmt.Fprintln(h.conn, "HTTP/1.1", code, http.StatusText(code))
-	log.Println(h.headers)
-	log.Println(h.headers.Get("Content-Length"))
 	if h.headers.Get("Content-Length") == "" {
 		h.headers.Set("Content-Length", "0")
 		h.noContent = true
 	}
-// 		//h.statusCode = code
-// 		if h.buf == nil {
-// 			h.buf = bytes.NewBuffer([]byte(""))
-// 		}
-// 		log.Println("No content-length")
-// 		return
 	log.Println("Writing headers")
 	for name, value := range h.headers {
 		valuestr := ""
