@@ -14,7 +14,7 @@ Import:
 
 Use:
 
-    httputil.ServeFileOnly(c, r)
+    httputil.ServeFileOnly(rw, r, path)
 
 What to Use it For
 ------------------
