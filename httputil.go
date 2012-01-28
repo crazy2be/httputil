@@ -2,13 +2,13 @@
 package httputil
 
 import (
-	"strings"
 	"bytes"
-	"http"
 	"fmt"
-	"log"
-	"os"
 	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
 )
 
 type HttpResponseWriter struct {
@@ -49,17 +49,17 @@ func (h *HttpResponseWriter) WriteHeader(code int) {
 	h.wroteHeaders = true
 }
 
-func (h *HttpResponseWriter) Write(buf []byte) (int, os.Error) {
+func (h *HttpResponseWriter) Write(buf []byte) (int, error) {
 	if !h.wroteHeaders {
 		h.WriteHeader(200)
 	}
 	if h.noContent {
 		return 0, nil
 	}
-// 	if h.buf != nil {
-// 		log.Println("BUffer length:", len(buf))
-// 		return h.buf.Write(buf)
-// 	}
+	// 	if h.buf != nil {
+	// 		log.Println("BUffer length:", len(buf))
+	// 		return h.buf.Write(buf)
+	// 	}
 	n, err := h.conn.Write(buf)
 	log.Println(n, err)
 	return n, err
@@ -90,7 +90,7 @@ func ServeFileOnly(w http.ResponseWriter, r *http.Request, name string) {
 		http.Error(w, "Unable to open file "+name, 404)
 		return
 	}
-	if finfo.IsDirectory() {
+	if finfo.IsDir() {
 		http.Error(w, "Access Denied To Folder Listing", 403)
 		return
 	}
